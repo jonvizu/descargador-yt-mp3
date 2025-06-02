@@ -1,6 +1,6 @@
 # Descargador de Audio MP3 de YouTube
 
-Este es un simple script de Python que permite descargar el audio de videos de YouTube en formato MP3 con la mejor calidad disponible, incrustando automáticamente los metadatos (título, artista) y la carátula del álbum.
+Este script de Python descarga el audio de vídeos de YouTube como archivos MP3 de alta calidad. Incluye la incrustación automática de metadatos (título, artista) y la carátula del álbum, ofreciendo una experiencia de audio completa y organizada.
 
 ## Características
 
