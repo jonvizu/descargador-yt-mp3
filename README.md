@@ -9,7 +9,7 @@ Este script de Python descarga el audio de vídeos de YouTube como archivos MP3 
 - Incrusta el título del video como título de la canción.
 - Intenta incrustar el nombre del canal/uploader como artista.
 - Incrusta la miniatura del video como carátula del álbum en el archivo MP3.
-- Guarda los archivos en una carpeta dedicada `descargas_mp3`.
+- Guarda los archivos en una carpeta dedicada `Downloads_Mp3`.
 
 ## Requisitos
 
