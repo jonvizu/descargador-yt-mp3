@@ -66,7 +66,7 @@ Este proyecto está bajo la Licencia MIT. (O la licencia que elijas)
 
 # Problemas Comunes y Soluciones con yt-dlp
 
-Este apartado documenta problemas frecuentes que pueden surgir al usar `yt-dlp` para descargas de YouTube, especialmente cuando se realizan múltiples operaciones, y sus soluciones.
+Este apartado documenta problemas frecuentes que pueden surgir al usar `yt-dlp` para descargas de YouTube, especialmente cuando se realizan múltiples operaciones o se requiere autenticación, y sus soluciones.
 
 ---
 
@@ -99,15 +99,91 @@ Además, para mejorar la resiliencia de las descargas y evitar este tipo de erro
 * **`sleep_interval_requests` y `sleep_interval_fragments`:** Introduce pequeñas pausas entre las solicitudes y los fragmentos descargados, lo que puede ayudar a reducir la probabilidad de ser detectado y bloqueado por YouTube.
 * **`user_agent`:** **Es fundamental usar un `User-Agent` actualizado y representativo de un navegador moderno.** Un `User-Agent` obsoleto es una causa común de rechazo de conexión por parte de los servidores.
 
-### Implementación en el Código (Ejemplo)
+## 2. Error de Carga/Descifrado de Cookies
+
+### Descripción del Problema
+
+Pueden surgir dos tipos principales de errores relacionados con las cookies del navegador:
+
+* **`TypeError: _parse_browser_specification() takes from X to Y positional arguments but Z were given`**: Este error ocurre cuando la opción `cookiesfrombrowser` se configura con un formato de tupla que no coincide con lo que la versión específica de `yt-dlp` espera para un navegador dado. Por ejemplo, pasar `('chrome',)` o `('brave', 'Default')` podría ser incorrecto si la función interna espera un número diferente de argumentos.
+* **`ERROR: Could not copy Chrome cookie database. See ... for more info`** o **`ERROR: Failed to decrypt with DPAPI. See ... for more info`**: Estos errores indican que `yt-dlp` no pudo acceder o descifrar la base de datos de cookies de tu navegador (Chrome o Brave). Esto es casi siempre porque el navegador está abierto y tiene el archivo de cookies bloqueado o porque el proceso de Python no tiene los permisos para descifrar el archivo (el descifrado por DPAPI está ligado al usuario y al proceso que lo cifró).
+
+### Solución Probada y Recomendada
+
+Existen dos enfoques principales para manejar las cookies, y la elección dependerá de si deseas mantener el navegador abierto o prefieres un método más robusto:
+
+#### Opción A: Usar `cookiesfrombrowser` (requiere navegador cerrado)
+
+Esta opción permite a `yt-dlp` intentar leer directamente las cookies del navegador.
+
+1.  **Asegúrate de que el navegador esté completamente cerrado:** Antes de ejecutar el script, **cierra todas las instancias de Brave (o Chrome)** y verifica en el Administrador de Tareas (Windows) o Monitor de Actividad (macOS/Linux) que no queden procesos del navegador ejecutándose en segundo plano. Esto libera el bloqueo sobre la base de datos de cookies y permite a `yt-dlp` intentar accederlas y descifrarlas.
+2.  **Ajusta el formato de `cookiesfrombrowser`:** Para evitar el `TypeError` inicial, la configuración de la tupla puede variar. Prueba con las siguientes opciones hasta encontrar la que funcione para tu navegador y versión de `yt-dlp`:
+    * Para Chrome: `('chrome', 'Default')` o `('chrome',)`.
+    * Para Brave: `('brave',)` o `'brave'` (como una cadena simple).
+
+    *Ejemplo para Brave:*
+    ```python
+    'cookiesfrombrowser': 'brave', # O quizás ('brave',)
+    ```
+
+#### Opción B: Usar `cookiefile` (método más robusto y universal)
+
+Esta es la solución más fiable si la Opción A sigue dando problemas o si necesitas mantener tu navegador abierto. Implica exportar las cookies a un archivo de texto y hacer que `yt-dlp` lo lea.
+
+1.  **Instala una extensión de navegador:**
+    * Para **Chrome** o **Brave** (o cualquier navegador basado en Chromium), busca e instala la extensión **"Get cookies.txt"** desde la Chrome Web Store.
+    * Para **Firefox**, busca e instala la extensión **"Export Cookies"** o similar que genere un archivo en formato Netscape.
+2.  **Inicia sesión en YouTube/YouTube Music:** Asegúrate de estar autenticado en la plataforma en tu navegador.
+3.  **Exporta las cookies:** Haz clic en el icono de la extensión (generalmente en la barra de herramientas del navegador) y selecciona la opción para exportar las cookies. Esto descargará un archivo llamado `cookies.txt` (o similar) en tu carpeta de descargas.
+4.  **Copia el archivo `cookies.txt` localmente:** Mueve el archivo `cookies.txt` descargado a la **misma carpeta donde se encuentra tu script de Python**. Esto es crucial para que `yt-dlp` pueda encontrarlo.
+5.  **Modifica tu código Python:**
+    * Comenta o elimina la línea `'cookiesfrombrowser': ...`.
+    * Descomenta y asegúrate de que la opción `'cookiefile': 'cookies.txt'` esté presente y activa en tus `YDL_OPTS_MP3`.
+
+    *Ejemplo de configuración en código:*
+    ```python
+    # ... (otras configuraciones)
+
+    YDL_OPTS_MP3 = {
+        # ... (tus opciones existentes)
+
+        # --- Opciones de Autenticación (elije una) ---
+        # 'cookiesfrombrowser': ('brave', 'Default'), # Opción A: Descomentar si usas este método
+        'cookiefile': 'cookies.txt',               # Opción B: Descomentar si usas este método y tienes el archivo local
+
+        'verbose': True, # Mantener en True para depuración, cambiar a False en producción.
+
+        # ... (resto de opciones de conexión y User-Agent)
+    }
+
+    # ... (resto de tu script)
+    ```
+
+---
+
+### Implementación en el Código (Ejemplo Completo y Unificado)
 
 Asegúrate de que tus opciones de `yt-dlp` (`YDL_OPTS_MP3` en tu script) incluyan los siguientes parámetros:
 
 ```python
-# ... (otras configuraciones)
+import yt_dlp
+from pathlib import Path
+
+# --- Configuración Global / Constantes ---
+DOWNLOAD_DIR = "Downloads_Mp3"
 
 YDL_OPTS_MP3 = {
-    # ... (tus opciones existentes)
+    'format': 'bestaudio/best',
+    'writethumbnail': True,
+    'postprocessors': [{
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': 'mp3',
+        'preferredquality': '0',
+    }, {
+        'key': 'EmbedThumbnail',
+    }, {
+        'key': 'FFmpegMetadata',
+    }],
     'nocheckcertificate': True,
     'geo_bypass': True,
     'no_warnings': True,
@@ -115,8 +191,15 @@ YDL_OPTS_MP3 = {
     'continue_dl': True,
     'quiet': True,
     'progress_hooks': [],
-    'cookiesfrombrowser': ('brave', 'Default'), # O 'cookiefile': 'cookies.txt', según tu método de autenticación
     'verbose': True, # Mantener en True para depuración, cambiar a False en producción.
+
+    # --- Opciones de Autenticación (ELIGE SÓLO UNA) ---
+    # Opción A: Leer cookies directamente del navegador (requiere que el navegador esté CERRADO)
+    'cookiesfrombrowser': 'brave', # Para Brave. Prueba también ('brave',)
+    # 'cookiesfrombrowser': ('chrome', 'Default'), # Para Chrome. Prueba también ('chrome',)
+
+    # Opción B: Leer cookies desde un archivo (más robusto, si el navegador necesita estar abierto o hay problemas de descifrado)
+    # 'cookiefile': 'cookies.txt', # Descomentar esta línea y comentar la anterior si usas este método.
 
     # --- Opciones Recomendadas para Estabilidad de Conexión ---
     'retries': 10,                 # Número de reintentos para conexiones fallidas
@@ -128,7 +211,12 @@ YDL_OPTS_MP3 = {
     'sleep_interval_fragments': 0.5, # Esperar 0.5 segundos entre la descarga de fragmentos
     'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36', # ¡MUY IMPORTANTE! Usar un User-Agent actual.
 
-    # ... (otras opciones si las tienes, como 'outtmpl')
+    # ... (otras opciones si las tienes, como 'outtmpl' que se setea dinámicamente)
 }
 
-# ... (resto de tu script)
+# --- Resto del código (funciones ensure_download_directory_exists, download_audio_mp3, main) ---
+# ... (todo el código que ya tienes)
+
+
+
+
