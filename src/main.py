@@ -13,13 +13,13 @@ def main_menu():
     Displays the main menu and handles user input.
     """
     while True:
-        print("\n--- 🔥 Menú Principal de Descargas 🔥 ---")
-        print("1. 🎵 Descargar Audio de YouTube (Video o Playlist)")
-        print("2. 🎶 Descargar Audio de YouTube Music (Playlist)")
-        print("3. 🎬 Descargar Video de YouTube")
-        print("4. 🚪 Salir")
+        print("\n--- Menu Principal de Descargas ---")
+        print("1. Descargar Audio de YouTube (Video o Playlist)")
+        print("2. Descargar Audio de YouTube Music (Playlist)")
+        print("3. Descargar Video de YouTube")
+        print("4. Salir")
 
-        choice = input("➡️ Elige una opción (1-4): ").strip()
+        choice = input("Elige una opción (1-4): ").strip()
 
         if choice == '1':
             youtube_audio_downloader.main()
@@ -28,10 +28,10 @@ def main_menu():
         elif choice == '3':
             youtube_video_downloader.main()
         elif choice == '4':
-            print("👋 ¡Hasta pronto!")
+            print("¡Hasta pronto!")
             break
         else:
-            print("⚠️ Opción no válida. Por favor, elige una opción del 1 al 4.")
+            print("Opción no válida. Por favor, elige una opción del 1 al 4.")
 
 if __name__ == "__main__":
     main_menu()

@@ -1,18 +1,5 @@
-# Entorno virtual
-venv/
-.venv/
 
-# Archivos de caché de Python
+Downloads_Mp3/
+Downloads_Videos/
 __pycache__/
-*.pyc
-
-# Archivos generados por VS Code
-.vscode/
-
-# Archivos de descarga (no queremos rastrearlos en Git)
-descargas_mp3/
-downloads/
-
-# Logs u otros archivos temporales
 *.log
-*.tmp

@@ -25,10 +25,12 @@ YDL_OPTS_BASE = {
     'no_warnings': True,
     'ignoreerrors': True,
     'continue_dl': True,
-    'quiet': True,
+    'quiet': False,
     'progress_hooks': [],
     'verbose': True,
-    'cookiefile': 'cookies.txt',
+    'cookiefile': 'z:\\projects\\Descargar_Python\\cookies.txt',
+    'sleep_interval': 10,
+    'sleep_subtitles': 10,
 }
 
 # --- Funciones del Programa ---

@@ -22,8 +22,12 @@ YDL_OPTS_VIDEO = {
     'nocheckcertificate': True,
     'no_warnings': True,
     'geo_bypass': True,        # Evita restricciones geográficas.
-    'quiet': True,
+    'quiet': False,
+    'verbose': True,
     'progress_hooks': [],
+    'cookiefile': 'z:\projects\Descargar_Python\cookies.txt',
+    'sleep_interval': 10,
+    'sleep_subtitles': 10,
 }
 
 # --- Manejo de errores
@@ -75,7 +79,7 @@ def safe_download(ydl, url):
         logging.error(f"Error inesperado durante la descarga de {url}: {e}")
         raise DownloadError(f"Error inesperado durante la descarga de {url}: {e}")
 
-def download_youtube_video(youtube_link: str, download_directory: Path):
+def download_youtube_video(youtube_link: str, download_directory: Path, use_browser_cookies: bool):
     """
     Descarga un video de YouTube con la mejor calidad de video y audio disponible,
     y lo guarda en la carpeta especificada. FFmpeg es requerido para la fusión.
@@ -99,6 +103,14 @@ def download_youtube_video(youtube_link: str, download_directory: Path):
     logging.info(f"Iniciando descarga de video desde: {youtube_link}")
     try:
         current_ydl_opts = YDL_OPTS_VIDEO.copy()
+
+        if use_browser_cookies:
+            # Pide al usuario que elija un navegador
+            browser = input("¿Qué navegador usar para las cookies? (chrome, firefox, edge, brave, etc.): ").strip().lower()
+            if browser:
+                current_ydl_opts['cookiesfrombrowser'] = (browser,)
+                print(f"🍪 Usando cookies del navegador: {browser}")
+
         current_ydl_opts['outtmpl'] = f"{download_directory / '%(artist)s - %(title)s.%(ext)s'}"
         current_ydl_opts['progress_hooks'].append(progress_hook)  # type: ignore
         with yt_dlp.YoutubeDL(current_ydl_opts) as ydl:
@@ -116,6 +128,9 @@ def main():
     if not download_folder_path:
         return
 
+    use_cookies_answer = input("¿Quieres intentar usar las cookies de tu navegador para acceder a contenido privado o playlists? (s/n): ").strip().lower()
+    use_browser_cookies = use_cookies_answer == 's'
+
     while True:
         link = input("\n➡️ Ingresa el enlace del video de YouTube (o 'q' para salir): ").strip()
         
@@ -127,7 +142,7 @@ def main():
             print("\n⚠️ Por favor, ingresa un enlace válido")
             continue
             
-        download_youtube_video(link, download_folder_path)
+        download_youtube_video(link, download_folder_path, use_browser_cookies)
 
 if __name__ == "__main__":
     main()
