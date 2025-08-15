@@ -1,6 +1,7 @@
 import yt_dlp
 from pathlib import Path
 import re
+from utils import is_youtube_music_url, ensure_download_directory_exists
 
 # --- Configuración Global / Constantes ---
 DOWNLOAD_DIR = "Downloads_Mp3"
@@ -36,14 +37,6 @@ YDL_OPTS_MP3 = {
         }
     }
 }
-
-def is_youtube_music_url(url: str) -> bool:
-    """Verifica si la URL es de YouTube Music."""
-    patterns = [
-        r'^(https?://)?(music\.youtube\.com/.*)',
-        r'^(https?://)?(www\.music\.youtube\.com/.*)'
-    ]
-    return any(re.match(pattern, url) for pattern in patterns)
 
 def download_audio_mp3(youtube_link: str, download_directory: Path):
     """Descarga audio de YouTube Music."""

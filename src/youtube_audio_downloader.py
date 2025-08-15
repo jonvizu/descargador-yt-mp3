@@ -1,18 +1,20 @@
 import yt_dlp
 from pathlib import Path
+import argparse
+from utils import ensure_download_directory_exists
 
 # --- Configuración Global / Constantes ---
 
 DOWNLOAD_DIR = "Downloads_Mp3"
 
-# Opciones detalladas para yt-dlp para la descarga de audio MP3.
-YDL_OPTS_MP3 = {
+# Opciones base para yt-dlp para la descarga de audio MP3.
+YDL_OPTS_BASE = {
     'format': 'bestaudio/best',
     'writethumbnail': True,
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
-        'preferredquality': '0',
+        'preferredquality': '0', # 192 is default, 0 is best
     }, {
         'key': 'EmbedThumbnail',
     }, {
@@ -25,39 +27,27 @@ YDL_OPTS_MP3 = {
     'continue_dl': True,
     'quiet': True,
     'progress_hooks': [],
-    # --- NUEVAS OPCIONES DE AUTENTICACIÓN ---
-    # Asegúrate de haber iniciado sesión en YouTube en este navegador.
-    # Elige el navegador que uses comúnmente. Algunos ejemplos:
-    # 'cookiesfrombrowser': 'chrome'
-    # 'cookiesfrombrowser': 'firefox'
-    # 'cookiesfrombrowser': 'edge'
-    # 'cookiesfrombrowser': 'brave'
-    # 'cookiesfrombrowser': ('chrome', None, '/path/to/cookies.txt') # Si necesitas especificar la ruta del perfil
-    'cookiesfrombrowser': ('chrome',), #'cookiesfrombrowser': 'chrome', # Por ejemplo, si usas Google Chrome
-    # 'username': 'tu_usuario_youtube', # Menos recomendado por seguridad
-    # 'password': 'tu_contraseña_youtube', # Menos recomendado por seguridad
     'verbose': True,
     'cookiefile': 'cookies.txt',
 }
 
-# --- Funciones del Programa (el resto del código es el mismo que el anterior) ---
+# --- Funciones del Programa ---
 
-def ensure_download_directory_exists(directory_name: str) -> Path | None:
-    download_path = Path(directory_name)
-    if not download_path.exists():
-        try:
-            download_path.mkdir(parents=True, exist_ok=True)
-            print(f"📁 Carpeta de descargas creada: '{download_path}'")
-        except OSError as e:
-            print(f"❌ Error al crear la carpeta '{download_path}': {e}")
-            return None
-    return download_path
-
-def download_audio_mp3(youtube_link: str, download_directory: Path):
+def download_audio(youtube_link: str, download_directory: Path, use_browser_cookies: bool):
+    """
+    Descarga el audio de un video o playlist de YouTube en formato MP3.
+    """
     print(f"\n🚀 Iniciando descarga y procesamiento de audio de: {youtube_link}")
 
     try:
-        current_ydl_opts = YDL_OPTS_MP3.copy()
+        current_ydl_opts = YDL_OPTS_BASE.copy()
+
+        if use_browser_cookies:
+            # Pide al usuario que elija un navegador
+            browser = input("¿Qué navegador usar para las cookies? (chrome, firefox, edge, brave, etc.): ").strip().lower()
+            if browser:
+                current_ydl_opts['cookiesfrombrowser'] = (browser,)
+                print(f"🍪 Usando cookies del navegador: {browser}")
 
         if "playlist" in youtube_link.lower():
             output_template = str(download_directory / '%(playlist_index)s - %(artist)s - %(title)s.%(ext)s')
@@ -77,13 +67,19 @@ def download_audio_mp3(youtube_link: str, download_directory: Path):
         print("💡 Asegúrate de que FFmpeg esté correctamente instalado y en tu PATH.")
 
 def main():
-    print("\n--- 🎧 Descargador Profesional de Audio MP3 de YouTube 🚀 ---")
+    """
+    Función principal del script que maneja la interacción con el usuario.
+    """
+    print("\n--- 🎧 Descargador Unificado de Audio MP3 de YouTube 🚀 ---")
     print("Este script te ayudará a obtener el audio de tus videos o playlists favoritos.")
 
     download_folder_path = ensure_download_directory_exists(DOWNLOAD_DIR)
     if download_folder_path is None:
         print("🚫 No se pudo inicializar el programa debido a un error en la carpeta de descargas.")
         return
+
+    use_cookies_answer = input("¿Quieres intentar usar las cookies de tu navegador para acceder a contenido privado o playlists? (s/n): ").strip().lower()
+    use_browser_cookies = use_cookies_answer == 's'
 
     while True:
         link = input(" \n➡️ Ingresa el enlace del video o playlist de YouTube (o 'q' para salir): ").strip()
@@ -92,7 +88,7 @@ def main():
             print("👋 Saliendo del programa. ¡Hasta pronto!")
             break
         elif link:
-            download_audio_mp3(link, download_folder_path)
+            download_audio(link, download_folder_path, use_browser_cookies)
         else:
             print("⚠️ No se ingresó ningún enlace válido. Por favor, intenta de nuevo.")
 

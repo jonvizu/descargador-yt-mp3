@@ -5,8 +5,7 @@ import re
 import logging
 import shutil
 from urllib.parse import urlparse
-
-
+from utils import is_valid_youtube_url, check_ffmpeg_installed, ensure_download_directory_exists
 
 # --- Configuración Global / Constantes ---
 
@@ -33,57 +32,6 @@ class DownloadError(Exception):
     pass
 
 # --- Funciones Utilitarias ---
-
-
-def is_valid_youtube_url(url: str) -> bool:
-    """
-    Verifica si la URL proporcionada es una URL válida de YouTube.
-
-    Args:
-        url (str): La URL de YouTube a verificar.
-
-    Returns:
-        bool: True si la URL es válida, False en caso contrario.
-    """
-    youtube_regex = r'^(https?://)?(www\.)?(youtube\.com|youtu\.be)/.+$'
-    if not re.match(youtube_regex, url):
-
-        return False
-
-    parsed = urlparse(url)
-    return bool(parsed.netloc and parsed.scheme)
-
-def check_ffmpeg_installed() -> bool:
-    """
-    Verifica si FFmpeg está instalado en el sistema.
-
-    Returns:
-        bool: True si FFmpeg está instalado, False en caso contrario.
-    """
-    return shutil.which('ffmpeg') is not None
-
-def ensure_download_directory_exists(directory_name: str) -> Path:
-    """
-    Asegura que el directorio de descargas exista. Si no existe, lo crea.
-
-    Args:
-        directory_name (str): El nombre de la carpeta a verificar/crear.
-
-    Returns:
-        Path | None: El objeto Path del directorio si se creó o ya existía,
-                     o None si hubo un error al crearlo.
-    """
-    download_path = Path(directory_name)
-    if not download_path.exists():
-        try:
-            download_path.mkdir(parents=True, exist_ok=True)
-            print(f"📁 Carpeta de descargas creada: '{download_path}'")
-            logging.info(f"Directorio de descarga creado: {download_path}")
-        except OSError as e:
-            print(f"❌ Error al crear la carpeta '{download_path}': {e}")
-            logging.error(f"Error al crear la carpeta '{download_path}': {e}")
-            raise
-    return download_path
 
 def progress_hook(d):
     """
@@ -159,3 +107,27 @@ def download_youtube_video(youtube_link: str, download_directory: Path):
         logging.info(f"Descarga de video completada exitosamente: {youtube_link}")
     except Exception as e:
         print(f"❌ Error general en la descarga: {e}")
+
+def main():
+    """Función principal del script."""
+    print("\n--- 🎬 Descargador de Videos de YouTube ---")
+    
+    download_folder_path = ensure_download_directory_exists(DOWNLOAD_DIR_VIDEO)
+    if not download_folder_path:
+        return
+
+    while True:
+        link = input("\n➡️ Ingresa el enlace del video de YouTube (o 'q' para salir): ").strip()
+        
+        if link.lower() == 'q':
+            print("\n👋 ¡Hasta pronto!")
+            break
+        
+        if not link:
+            print("\n⚠️ Por favor, ingresa un enlace válido")
+            continue
+            
+        download_youtube_video(link, download_folder_path)
+
+if __name__ == "__main__":
+    main()
