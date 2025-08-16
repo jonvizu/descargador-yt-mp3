@@ -1,12 +1,6 @@
-import sys
-from pathlib import Path
-
-# Add the src directory to the Python path to allow imports from other scripts
-sys.path.append(str(Path(__file__).parent))
-
-import youtube_audio_downloader
-import youtube_mp3_downloader
-import youtube_video_downloader
+from . import youtube_audio_downloader
+from . import youtube_mp3_downloader
+from . import youtube_video_downloader
 
 def main_menu():
     """
